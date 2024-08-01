@@ -1,11 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="color-scheme" content="dark light">
+    <title>HTMX + Slim PHP Crud</title>
+    <script src="https://unpkg.com/htmx.org@2.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.8/dist/css/uikit.min.css" />
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.8/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.21.8/dist/js/uikit-icons.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+        }
+
+        main {
+            display: grid;
+            gap: 25px;
+        }
+
+        @media screen {
+            main {
+                grid-template-columns: 60% 40%;
+                min-width: 1200px;
+            }
+        }
+
+        .add-contact-submit {
+            display: flex;
+            place-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: block;
+        }
+
+        .contacts-table-wrapper {
+            height: 60vh;
+            overflow-y: scroll;
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes slide-from-right {
+            from {
+                transform: translateX(90px);
+            }
+        }
+
+        @keyframes slide-to-left {
+            to {
+                transform: translateX(-90px);
+            }
+        }
+
+        .slide-it {
+            view-transition-name: slide-it;
+        }
+
+        ::view-transition-old(slide-it) {
+            animation: 180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+                600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+        }
+
+        ::view-transition-new(slide-it) {
+            animation: 420ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+                600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+        }
+    </style>
 </head>
-<body>
-    <h1>Hello, world!</h1>
+
+<body class="uk-light uk-background-secondary uk-padding">
+    <main>
+        <section>
+            <h3 class="uk-heading-line uk-text-center"><span>Contacts</span></h3>
+            <div class="contacts-table-wrapper">
+                <table class="uk-table uk-table-justify uk-table-middle uk-table-divider">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody hx-target="closest tr" hx-swap="outerHTML transition:true" id="contacts-body"
+                        path-deps="/contacts" hx-swap-oob="beforeend:#contacts-body" hx-trigger="newContact from:body">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <aside>
+            <form hx-post="/contact" hx-swap="none" hx-on::after-request="this.reset()">
+                <h3 class="uk-heading-line uk-text-center"><span>Add a contact</span></h3>
+                <fieldset class="uk-fieldset">
+                    <div class="uk-margin">
+                        <input class="uk-input" type="text" placeholder="Name" name="name" required>
+                    </div>
+
+                    <div class="uk-margin">
+                        <input class="uk-input" type="email" placeholder="Email" name="email" required>
+                    </div>
+
+                    <div>
+                        <button class="uk-button uk-button-default add-contact-submit" hx-indicator="#spinner">
+                            <div id="spinner" class="htmx-indicator" uk-spinner="ratio: 0.7"></div>
+                            Submit
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+        </aside>
+    </main>
+
+    <script>
+        function loadContacts() {
+            fetch('/contacts')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('contacts-body');
+                    tbody.innerHTML = '';
+                    data.forEach(contact => {
+                        const rowHtml = `
+                            <tr>
+                                <td>${contact.name}</td>
+                                <td>${contact.email}</td>
+                                <td>
+                                    <button class="uk-button uk-button-default" hx-get="/contact/${contact.id}/edit" hx-on="click: checkEditing(event)">Edit</button>
+                                    <button class="uk-button uk-button-default" hx-delete="/contact/${contact.id}" hx-confirm="Are you sure?">Delete</button>
+                                </td>
+                            </tr>`;
+                        tbody.innerHTML += rowHtml;
+                    });
+
+                    htmx.process(tbody);
+                });
+        }
+
+        htmx.logger = function (elt, event, data) {
+            if (console) {
+                console.log(event, elt, data);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadContacts);
+    </script>
 </body>
+
 </html>

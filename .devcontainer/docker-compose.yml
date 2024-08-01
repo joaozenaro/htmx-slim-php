@@ -1,0 +1,17 @@
+services:
+  www:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    volumes:
+      - ../:/var/www
+    ports:
+      - "9003:9003"
+    command: sleep infinity
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

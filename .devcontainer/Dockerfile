@@ -3,7 +3,7 @@ FROM alpine
 WORKDIR /var/www/
 
 RUN apk add --no-cache --update \ 
-    curl bash sudo sqlite \
+    curl git bash sudo sqlite \
     php php83 \
     php83-curl php83-mbstring php83-phar php83-openssl \
     php83-pdo_sqlite php83-pecl-xdebug

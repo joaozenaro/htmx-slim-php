@@ -7,7 +7,6 @@
     <meta name="color-scheme" content="dark light">
     <title>HTMX + Slim PHP Crud</title>
     <script src="https://unpkg.com/htmx.org@2.0.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- UIkit CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.8/dist/css/uikit.min.css" />
     <!-- UIkit JS -->
@@ -28,13 +27,8 @@
         main {
             display: grid;
             gap: 25px;
-        }
-
-        @media screen {
-            main {
-                grid-template-columns: 60% 40%;
-                min-width: 1200px;
-            }
+            grid-template-columns: 60% 40%;
+            min-width: 1200px;
         }
 
         .add-contact-submit {
@@ -56,44 +50,6 @@
         .contacts-table-wrapper {
             height: 60vh;
             overflow-y: scroll;
-        }
-
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-            }
-        }
-
-        @keyframes fade-out {
-            to {
-                opacity: 0;
-            }
-        }
-
-        @keyframes slide-from-right {
-            from {
-                transform: translateX(90px);
-            }
-        }
-
-        @keyframes slide-to-left {
-            to {
-                transform: translateX(-90px);
-            }
-        }
-
-        .slide-it {
-            view-transition-name: slide-it;
-        }
-
-        ::view-transition-old(slide-it) {
-            animation: 180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
-                600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-        }
-
-        ::view-transition-new(slide-it) {
-            animation: 420ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
-                600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
         }
     </style>
 </head>
@@ -122,15 +78,15 @@
                 <h3 class="uk-heading-line uk-text-center"><span>Add a contact</span></h3>
                 <fieldset class="uk-fieldset">
                     <div class="uk-margin">
-                        <input class="uk-input" type="text" placeholder="Name" name="name" required>
+                        <input class="uk-input" type="text" placeholder="Name" name="name">
                     </div>
 
                     <div class="uk-margin">
-                        <input class="uk-input" type="email" placeholder="Email" name="email" required>
+                        <input class="uk-input" type="email" placeholder="Email" name="email">
                     </div>
 
                     <div>
-                        <button class="uk-button uk-button-default add-contact-submit" hx-indicator="#spinner">
+                        <button class="uk-button uk-button-default add-contact-submit" hx-trigger="click[checkFormState(this)]" hx-indicator="#spinner">
                             <div id="spinner" class="htmx-indicator" uk-spinner="ratio: 0.7"></div>
                             Submit
                         </button>
@@ -153,7 +109,7 @@
                                 <td>${contact.name}</td>
                                 <td>${contact.email}</td>
                                 <td>
-                                    <button class="uk-button uk-button-default" hx-get="/contact/${contact.id}/edit" hx-on="click: checkEditing(event)">Edit</button>
+                                    <button class="uk-button uk-button-default" hx-get="/contact/${contact.id}/edit">Edit</button>
                                     <button class="uk-button uk-button-default" hx-delete="/contact/${contact.id}" hx-confirm="Are you sure?">Delete</button>
                                 </td>
                             </tr>`;
@@ -164,11 +120,25 @@
                 });
         }
 
-        htmx.logger = function (elt, event, data) {
-            if (console) {
-                console.log(event, elt, data);
+        function checkFormState(button) {
+            const form = button.closest("form") || button.closest("tr");
+            const name = form.querySelector("input[name='name']");
+            const email = form.querySelector("input[name='email']");
+
+            if (!name.value.trim()) {
+                UIkit.notification('Name is required', {status: 'danger', pos: 'bottom-right'});
+                
+            } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i.test(email.value.trim())) {
+                UIkit.notification('Valid email is required', {status: 'danger', pos: 'bottom-right'});
+
+            } else {
+                htmx.trigger(form, 'submit');
+
+                return true;
             }
         }
+
+        // htmx.logger = (elt, event, data) => console && console.log(event, elt, data);
 
         document.addEventListener('DOMContentLoaded', loadContacts);
     </script>
